@@ -190,11 +190,13 @@ function! s:_funcs.block.wrap(left, right, reg, pos) abort " {{{
 endfunction " }}}
 " }}}
 
-" insert_before {{{
-" }}}
+function! s:insert_before(motion, str, ...) abort " {{{
+  return call(function('s:wrap'), [a:motion, a:str, ''] + a:000)
+endfunction " }}}
 
-" insert_after {{{
-" }}}
+function! s:insert_after(motion, str, ...) abort " {{{
+  return call(function('s:wrap'), [a:motion, '', a:str] + a:000)
+endfunction " }}}
 
 let &cpo = s:save_cpo
 unlet s:save_cpo
