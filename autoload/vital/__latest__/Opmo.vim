@@ -9,14 +9,8 @@ function! s:_knormal(s) abort " {{{
   execute 'keepjumps' 'silent' 'normal!' a:s
 endfunction " }}}
 
-function! s:_get_default_reg() abort " {{{
-  return &clipboard =~# 'unnamedplus' ? '+'
-     \ : &clipboard =~# 'unnamed'     ? '*'
-     \ :                                '"'
-endfunction " }}}
-
 function! s:_reg_save() abort " {{{
-  let reg = s:_get_default_reg()
+  let reg = '"'
   let regdic = {}
   for r in [reg]
     let regdic[r] = [getreg(r), getregtype(r)]
