@@ -4,12 +4,12 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 " flag: motion: detail (function) [conflict]
-"  n: line : 改行するか. (wrap)
-"  e: block: 各行処理 (wrap) [E]
-"  E: block: 全体をまとめる (wrap) [e]
+"  n: line : 改行するか. (wrap), eval
+"  w: block: 全体をまとめる (wrap)
+"  v: block: 垂直方向 (wrap), eval
 "  t: block: 上詰め (replace) [b]
-"  b: block: 下詰め (replace) [t]
-"  ?: block: あふれたらどうする? (replace)
+"  b: block: 下詰め (replace) [t], eval
+"  c: block: あふれたらどうする? (replace)
 
 
 let s:_funcs = {'char' : {'v':'v'}, 'line': {'v':'V'}, 'block': {'v':"\<C-v>"}}
@@ -182,30 +182,52 @@ function! s:_funcs.line.wrap(left, right, reg, flags) abort " {{{
 endfunction " }}}
 
 function! s:_funcs.block.wrap(left, right, reg, flags) abort " {{{
-  " 各行, 最初と最後.
-  if a:flags =~# 'E'
+  if a:flags =~# 'v'
+    return s:block_wrap_vertical(a:left, a:right, a:reg)
+  elseif a:flags =~# 'w'
+    " whole 最初と最後.
     return s:_funcs.char.wrap(a:left, a:right, a:reg)
   else
-    " 各行について char する.
-    " left, right が改行文字をもつと壊れる
-    call s:_knormal(printf('gv"%sy', a:reg))
-    let spos = getpos("'[")
-    let epos = getpos("']")
-    let end = str2nr(getregtype(a:reg)[1:]) + spos[2] - 1
-    call setreg(a:reg, a:right, 'v')
-    for line in range(spos[1], epos[1])
-      call setpos('.', [0, line, end, 0])
-      if len(getline('.')) >= spos[2]
-        call s:_knormal('"' . a:reg . 'p')
-      endif
-    endfor
-    call setreg(a:reg, a:left, 'v')
-    for line in range(spos[1], epos[1])
-      call setpos('.', [0, line, spos[2], 0])
-      if len(getline('.')) >= spos[2]
-        call s:_knormal('"' . a:reg . 'P')
-      endif
-    endfor
+    " 各行
+    return s:block_wrap_eachline(a:left, a:right, a:reg)
+  endif
+endfunction " }}}
+
+function! s:block_wrap_eachline(left, right, reg) abort " {{{
+  " 各行について char する.
+  " left, right が改行文字をもつと壊れる
+  call s:_knormal(printf('gv"%sy', a:reg))
+  let spos = getpos("'[")
+  let epos = getpos("']")
+  let end = str2nr(getregtype(a:reg)[1:]) + spos[2] - 1
+  call setreg(a:reg, a:right, 'v')
+  for line in range(spos[1], epos[1])
+    call setpos('.', [0, line, end, 0])
+    if len(getline('.')) >= spos[2]
+      call s:_knormal('"' . a:reg . 'p')
+    endif
+  endfor
+  call setreg(a:reg, a:left, 'v')
+  for line in range(spos[1], epos[1])
+    call setpos('.', [0, line, spos[2], 0])
+    if len(getline('.')) >= spos[2]
+      call s:_knormal('"' . a:reg . 'P')
+    endif
+  endfor
+endfunction " }}}
+
+function! s:block_wrap_vertical(left, right, reg) abort " {{{
+  call s:_knormal(printf('gv"%sy', a:reg))
+  let spos = getpos("'[")
+  let blank = repeat(' ', spos[1]-1)
+
+  if a:right !=# ''
+    call setreg(a:reg, blank . a:right, 'V')
+    call s:_knormal('`>"' . a:reg . 'p')
+  endif
+  if a:left !=# ''
+    call setreg(a:reg, blank . a:left, 'V')
+    call s:_knormal('`<"' . a:reg . 'P')
   endif
 endfunction " }}}
 " }}}
