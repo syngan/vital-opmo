@@ -62,13 +62,14 @@ endfunction " }}}
 "}}}
 
 " highlight(motion, hlgroup, priority...) {{{
-function! s:highlight(motion, hlgroup) abort " {{{
+function! s:highlight(motion, hlgroup, ...) abort " {{{
   let fdic = s:_funcs[a:motion]
   let [reg, regdic] = s:_reg_save()
+  let priority = get(a:, '1', 10)
 
   try
     call s:_knormal(printf('`[%s`]"%sy', fdic.v, reg))
-    let mids = fdic.highlight(getpos("'["), getpos("']"), a:hlgroup)
+    let mids = fdic.highlight(getpos("'["), getpos("']"), a:hlgroup, priority)
     return mids
   finally
     call s:_reg_restore(regdic)
@@ -78,26 +79,26 @@ function! s:highlight(motion, hlgroup) abort " {{{
 "   endfor
 endfunction " }}}
 
-function! s:_funcs.char.highlight(begin, end, hlgroup) abort " {{{
+function! s:_funcs.char.highlight(begin, end, hlgroup, priority) abort " {{{
   if a:begin[1] == a:end[1]
     return [matchadd(a:hlgroup,
-    \ printf('\%%%dl\%%>%dc\%%<%dc', a:begin[1], a:begin[2]-1, a:end[2]+1))]
+    \ printf('\%%%dl\%%>%dc\%%<%dc', a:begin[1], a:begin[2]-1, a:end[2]+1), a:priority)]
   else
     return [
-    \ matchadd(a:hlgroup, printf('\%%%dl\%%>%dc', a:begin[1], a:begin[2]-1)),
-    \ matchadd(a:hlgroup, printf('\%%%dl\%%<%dc', a:end[1], a:end[2]+1)),
-    \ matchadd(a:hlgroup, printf('\%%>%dl\%%<%dl', a:begin[1], a:end[1]))]
+    \ matchadd(a:hlgroup, printf('\%%%dl\%%>%dc', a:begin[1], a:begin[2]-1), a:priority),
+    \ matchadd(a:hlgroup, printf('\%%%dl\%%<%dc', a:end[1], a:end[2]+1), a:priority),
+    \ matchadd(a:hlgroup, printf('\%%>%dl\%%<%dl', a:begin[1], a:end[1]), a:priority)]
   endif
 endfunction " }}}
 
-function! s:_funcs.line.highlight(begin, end, hlgroup) abort " {{{
-  return [matchadd(a:hlgroup, printf('\%%>%dl\%%<%dl', a:begin[1]-1, a:end[1]+1))]
+function! s:_funcs.line.highlight(begin, end, hlgroup, priority) abort " {{{
+  return [matchadd(a:hlgroup, printf('\%%>%dl\%%<%dl', a:begin[1]-1, a:end[1]+1), a:priority)]
 endfunction " }}}
 
-function! s:_funcs.block.highlight(begin, end, hlgroup) abort " {{{
+function! s:_funcs.block.highlight(begin, end, hlgroup, priority) abort " {{{
   return [matchadd(a:hlgroup,
         \ printf('\%%>%dl\%%<%dl\%%>%dc\%%<%dc',
-        \ a:begin[1]-1, a:end[1]+1, a:begin[2]-1, a:end[2]+1))]
+        \ a:begin[1]-1, a:end[1]+1, a:begin[2]-1, a:end[2]+1), a:priority)]
 endfunction " }}}
 "}}}
 
