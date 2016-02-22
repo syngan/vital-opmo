@@ -10,7 +10,7 @@ let s:f = s:scope.funcs('autoload/vital/__latest__/Opmo.vim')
 let s:regval = 'foobaa'
 
 
-let s:pos = -1
+let s:pos = ''
 function! OpmoWrapThemis(motion) abort " {{{
   call s:f.wrap(a:motion, '123', '456', s:pos)
 endfunction " }}}
@@ -26,14 +26,14 @@ let s:lines = [
 function! s:suite.before_each() " {{{
   new
   call setline(1, s:lines)
+  let s:pos = ''
 endfunction " }}}
 
 function! s:suite.after_each() " {{{
   quit!
 endfunction " }}}
 
-function! s:linet(n, v, ...) abort " {{{
-  let s:pos = get(a:, '1', -1)
+function! s:linet(n, v) abort " {{{
   cal setreg('"', s:regval, 'v')
   execute 'normal' a:n . 'G0' . a:v . "\<Plug>(operator-opmo-wrap)"
   for i in range(1, 4)
@@ -100,7 +100,7 @@ function! s:wholet(v, pos) abort " {{{
   cal setreg('"', s:regval, 'v')
   execute 'normal' 'gg0' . a:v . "G$\<Plug>(operator-opmo-wrap)"
   for i in range(1, 4)
-    if a:pos < 0
+    if a:pos =~# 'e'
       call s:assert.equals(getline(i), '123' . s:lines[i-1] . '456', i)
     elseif i == 1
       call s:assert.equals(getline(i), '123' . s:lines[i-1], i)
@@ -115,19 +115,19 @@ function! s:wholet(v, pos) abort " {{{
 endfunction " }}}
 
 function! s:suite.char_whole() abort " {{{
-  call s:wholet('v', 1)
+  call s:wholet('v', '')
 endfunction " }}}
 
 function! s:suite.line_whole() abort " {{{
-  call s:wholet('V', 1)
+  call s:wholet('V', '')
 endfunction " }}}
 
 function! s:suite.blockc_whole() abort " {{{
-  call s:wholet("\<C-v>", 1)
+  call s:wholet("\<C-v>", 'E')
 endfunction " }}}
 
 function! s:suite.blocke_whole() abort " {{{
-  call s:wholet("\<C-v>", -1)
+  call s:wholet("\<C-v>", 'e')
 endfunction " }}}
 
 function! s:check(exp) abort " {{{
@@ -160,7 +160,6 @@ endfunction " }}}
 
 
 function! s:suite.blocke_mid() abort " {{{
-  let s:pos = -1
   let exp = copy(s:lines)
   execute 'normal' "1G0\<C-v>4lj\<Plug>(operator-opmo-wrap)"
   let exp[0] = substitute(exp[0], '^.....\zs', '456', '')
@@ -178,7 +177,6 @@ function! s:suite.blocke_mid() abort " {{{
 endfunction " }}}
 
 function! s:suite.blocke_end() abort " {{{
-  let s:pos = -1
   let exp = copy(s:lines)
   execute 'normal' "1G13l\<C-v>4l3j\<Plug>(operator-opmo-wrap)"
   for i in [0,1,2,3]
