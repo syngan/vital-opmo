@@ -39,3 +39,9 @@ function! opmo#surround(motion) abort " {{{
 endfunction " }}}
 ```
 
+# Real World Examples
+
+- [syngan/vim-operator-furround](https://github.com/syngan/vim-operator-furround)
+- [syngan/vim-operator-inserttext](https://github.com/syngan/vim-operator-inserttext)
+- [syngan/vim-bluemoon](https://github.com/syngan/vim-bluemoon)
+
