@@ -95,12 +95,12 @@ function! s:suite.block_line4() abort " {{{
   call s:linet(4, "\<C-v>$")
 endfunction " }}}
 
-function! s:wholet(v, pos) abort " {{{
+function! s:wholet(v, pos, each) abort " {{{
   let s:pos = a:pos
   cal setreg('"', s:regval, 'v')
   execute 'normal' 'gg0' . a:v . "G$\<Plug>(operator-opmo-wrap)"
   for i in range(1, 4)
-    if a:pos =~# 'e'
+    if a:each
       call s:assert.equals(getline(i), '123' . s:lines[i-1] . '456', i)
     elseif i == 1
       call s:assert.equals(getline(i), '123' . s:lines[i-1], i)
@@ -115,19 +115,19 @@ function! s:wholet(v, pos) abort " {{{
 endfunction " }}}
 
 function! s:suite.char_whole() abort " {{{
-  call s:wholet('v', '')
+  call s:wholet('v', '', 0)
 endfunction " }}}
 
 function! s:suite.line_whole() abort " {{{
-  call s:wholet('V', '')
+  call s:wholet('V', '', 0)
 endfunction " }}}
 
-function! s:suite.blockc_whole() abort " {{{
-  call s:wholet("\<C-v>", 'E')
+function! s:suite.blockw_whole() abort " {{{
+  call s:wholet("\<C-v>", 'w', 0)
 endfunction " }}}
 
-function! s:suite.blocke_whole() abort " {{{
-  call s:wholet("\<C-v>", 'e')
+function! s:suite.block_whole() abort " {{{
+  call s:wholet("\<C-v>", '', 1)
 endfunction " }}}
 
 function! s:check(exp) abort " {{{
