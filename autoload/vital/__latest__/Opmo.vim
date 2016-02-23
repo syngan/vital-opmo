@@ -34,6 +34,10 @@ function! s:_reg_restore(regdic) abort " {{{
   endfor
 endfunction " }}}
 
+function! s:_block_width(reg) abort " {{{
+  return str2nr(getregtype(a:reg)[1:])
+endfunction " }}}
+
 " gettext(motion) {{{
 function! s:_funcs.char.gettext(reg) abort " {{{
   call s:_knormal(printf('`[v`]"%sy', a:reg))
@@ -68,15 +72,15 @@ function! s:highlight(motion, hlgroup, ...) abort " {{{
   let priority = get(a:, '1', 10)
 
   try
-    call s:_knormal(printf('`[%s`]"%sy', fdic.v, reg))
-    let mids = fdic.highlight(getpos("'["), getpos("']"), a:hlgroup, priority)
+    let mids = fdic.highlight(reg, getpos("'["), getpos("']"), a:hlgroup, priority)
     return mids
   finally
     call s:_reg_restore(regdic)
   endtry
 endfunction " }}}
 
-function! s:_funcs.char.highlight(begin, end, hlgroup, priority) abort " {{{
+function! s:_funcs.char.highlight(reg, begin, end, hlgroup, priority) abort " {{{
+  call s:_knormal(printf('`[v`]"%sy', a:reg))
   if a:begin[1] == a:end[1]
     return [matchadd(a:hlgroup,
     \ printf('\%%%dl\%%>%dc\%%<%dc', a:begin[1], a:begin[2]-1, a:end[2]+1), a:priority)]
@@ -88,14 +92,18 @@ function! s:_funcs.char.highlight(begin, end, hlgroup, priority) abort " {{{
   endif
 endfunction " }}}
 
-function! s:_funcs.line.highlight(begin, end, hlgroup, priority) abort " {{{
+function! s:_funcs.line.highlight(reg, begin, end, hlgroup, priority) abort " {{{
+  call s:_knormal(printf('`[V`]"%sy', a:reg))
   return [matchadd(a:hlgroup, printf('\%%>%dl\%%<%dl', a:begin[1]-1, a:end[1]+1), a:priority)]
 endfunction " }}}
 
-function! s:_funcs.block.highlight(begin, end, hlgroup, priority) abort " {{{
+function! s:_funcs.block.highlight(reg, begin, end, hlgroup, priority) abort " {{{
+  call s:_knormal(printf('gv"%sy', a:reg))
+  let width = s:_block_width(a:reg)
+  echomsg width
   return [matchadd(a:hlgroup,
         \ printf('\%%>%dl\%%<%dl\%%>%dc\%%<%dc',
-        \ a:begin[1]-1, a:end[1]+1, a:begin[2]-1, a:end[2]+1), a:priority)]
+        \ a:begin[1]-1, a:end[1]+1, a:begin[2]-1, a:begin[2]+width), a:priority)]
 endfunction " }}}
 "}}}
 
@@ -151,7 +159,7 @@ function! s:_funcs.block.replace(str, reg, flags) abort " {{{
   call s:_knormal('gv"' . a:reg . 'y')
   let spos = getpos("'[")
   let epos = getpos("']")
-  let width = str2nr(getregtype(a:reg)[1:])
+  let width = s:_block_width(a:reg)
   let strs = split(a:str, "\n")
   if epos[1] - spos[1] + 1 <= len(strs)
     if a:flags =~# 'c'
