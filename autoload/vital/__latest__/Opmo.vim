@@ -74,9 +74,6 @@ function! s:highlight(motion, hlgroup, ...) abort " {{{
   finally
     call s:_reg_restore(regdic)
   endtry
-"   for m in mids
-"     silent! call matchdelete(m)
-"   endfor
 endfunction " }}}
 
 function! s:_funcs.char.highlight(begin, end, hlgroup, priority) abort " {{{
@@ -101,6 +98,12 @@ function! s:_funcs.block.highlight(begin, end, hlgroup, priority) abort " {{{
         \ a:begin[1]-1, a:end[1]+1, a:begin[2]-1, a:end[2]+1), a:priority)]
 endfunction " }}}
 "}}}
+
+function! s:unhighlight(mids) abort " {{{
+  for m in a:mids
+    silent! call matchdelete(m)
+  endfor
+endfunction " }}}
 
 " replace(motion, str, flags) {{{
 function! s:replace(motion, str, ...) abort " {{{
