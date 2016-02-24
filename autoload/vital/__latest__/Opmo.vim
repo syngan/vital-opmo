@@ -132,7 +132,18 @@ function! s:_funcs.char.replace(str, reg, ...) abort " {{{
   call setreg(a:reg, a:str, 'v')
   let end = getpos("']")
   let eline = getline(end[1])
-  let p = (len(eline) == end[2]) ? 'p' : 'P'
+  if len(eline) > end[2]
+    let p = 'P'
+  else
+    let p = 'p'
+
+    if len(eline) < end[2]
+      " 手元では起きないけど, travis で死んだ.
+      let end[2] = len(eline)
+      call setpos("']", end)
+    endif
+  endif
+
   call s:_knormal(printf('`[v`]"_d"%s%s', a:reg, p))
 endfunction " }}}
 
