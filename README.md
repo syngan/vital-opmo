@@ -3,7 +3,6 @@ vital-opmo
 
 [![Build Status](https://travis-ci.org/syngan/vital-opmo.svg?branch=master)](https://travis-ci.org/syngan/vital-opmo)
 [![Windows Build status](https://ci.appveyor.com/api/projects/status/cybjgc5u3mb725yc/branch/master?svg=true&label=windows%20build%20master)](https://ci.appveyor.com/project/syngan/vital-opmo)
-[![Windows Build status](https://ci.appveyor.com/api/projects/status/cybjgc5u3mb725yc?svg=true&label=windows%20build%20any)](https://ci.appveyor.com/project/syngan/vital-opmo)
 
 # Usage
 
