@@ -41,32 +41,34 @@ function! s:_block_width(reg) abort " {{{
   return str2nr(getregtype(a:reg)[1:])
 endfunction " }}}
 
-" gettext(motion) {{{
-function! s:_funcs.char.gettext(reg) abort " {{{
+" yank(motion) {{{
+function! s:_funcs.char.yank(reg) abort " {{{
   call s:_knormal(printf('`[v`]"%sy', a:reg))
-  return getreg(a:reg)
 endfunction " }}}
 
-function! s:_funcs.line.gettext(reg) abort " {{{
+function! s:_funcs.line.yank(reg) abort " {{{
   call s:_knormal(printf('`[V`]"%sy', a:reg))
-  return getreg(a:reg)
 endfunction " }}}
 
-function! s:_funcs.block.gettext(reg) abort " {{{
+function! s:_funcs.block.yank(reg) abort " {{{
   call s:_knormal(printf('gv"%sy', a:reg))
-  return getreg(a:reg)
 endfunction " }}}
+
+function! s:yank(motion, reg) abort " {{{
+  let fdic = s:_funcs[a:motion]
+  return fdic.yank(a:reg)
+endfunction " }}}
+"}}}
 
 function! s:gettext(motion) abort " {{{
-  let fdic = s:_funcs[a:motion]
   let [reg; regdic] = s:_reg_save()
   try
-    return fdic.gettext(reg)
+    call s:yank(a:motion, reg)
+    return getreg(reg)
   finally
     call s:_reg_restore(regdic)
   endtry
 endfunction " }}}
-"}}}
 
 " highlight(motion, hlgroup, priority...) {{{
 function! s:highlight(motion, hlgroup, ...) abort " {{{
