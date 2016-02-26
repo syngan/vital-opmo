@@ -7,9 +7,13 @@ set cpo&vim
 "  n: line : 改行するか. (wrap), eval
 "  w: block: 全体をまとめる (wrap)
 "  v: block: 垂直方向 (wrap), eval
-"  b: block: 下詰め (replace)  eval
-"  c: block: あふれたら捨てる (replace)
-"  C: block: 足りなかったら削除しない (replace)
+"  u: block: 下詰め (replace)  eval
+"  d: block: あふれたら捨てる (replace)
+"  D: block: 足りなかったら削除しない (replace)
+"
+"  l: line : (eachline)
+"  c: char : (eachline)
+"  b: block : (eachline)
 " }}}
 
 let s:_funcs = {'char' : {'v':'v'}, 'line': {'v':'V'}, 'block': {'v':"\<C-v>"}}
@@ -179,11 +183,11 @@ function! s:_funcs.block.replace(str, reg, flags) abort " {{{
   let width = s:_block_width(a:reg)
   let strs = split(a:str, "\n")
   if epos[1] - spos[1] + 1 <= len(strs)
-    if a:flags =~# 'c'
+    if a:flags =~# 'd'
       " あふれは捨てる
       let t = spos[1]
       let b = epos[1]
-      if a:flags =~# 'b'
+      if a:flags =~# 'u'
         let strs = strs[len(strs) - (b - t + 1) :]
       endif
     else
@@ -196,9 +200,9 @@ function! s:_funcs.block.replace(str, reg, flags) abort " {{{
         endfor
       endif
     endif
-  elseif a:flags =~# 'C'
+  elseif a:flags =~# 'D'
     " 不足分は何もしない
-    if a:flags =~# 'b'
+    if a:flags =~# 'u'
       " bottom
       let t = epos[1] - len(strs) + 1
       let b = epos[1]
@@ -211,7 +215,7 @@ function! s:_funcs.block.replace(str, reg, flags) abort " {{{
     " 不足分は空文字に
     let t = spos[1]
     let b = epos[1]
-    if a:flags =~# 'b'
+    if a:flags =~# 'u'
       let strs = repeat([''], epos[1] - spos[1] + 1 - len(strs)) + strs
     else
       let strs = strs + repeat([''], epos[1] - spos[1] + 1 - len(strs))

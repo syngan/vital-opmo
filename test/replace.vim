@@ -106,12 +106,12 @@ function! s:suite.blocktC_whole() abort " {{{
   let str2 = 'ppppppppppppppppbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
   let str3 = 'min'
   let str = join([str1,str2,str3], "\n")
-  call s:wholet("\<C-v>", str, 'C', [str1, str2, str3, s:lines[3]])
+  call s:wholet("\<C-v>", str, 'D', [str1, str2, str3, s:lines[3]])
 endfunction " }}}
 
 function! s:suite.blockb_whole() abort " {{{
   let str = '1234567345678'
-  call s:wholet("\<C-v>", str, 'b', ['', '', '', str])
+  call s:wholet("\<C-v>", str, 'u', ['', '', '', str])
 endfunction " }}}
 
 function! s:suite.blockb2_whole() abort " {{{
@@ -119,7 +119,7 @@ function! s:suite.blockb2_whole() abort " {{{
   let str2 = 'ppppppppppppppppbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
   let str3 = 'min'
   let str = join([str1,str2,str3], "\n")
-  call s:wholet("\<C-v>", str, 'b', ['', str1, str2, str3])
+  call s:wholet("\<C-v>", str, 'u', ['', str1, str2, str3])
 endfunction " }}}
 
 function! s:suite.blockbC_whole() abort " {{{
@@ -127,7 +127,7 @@ function! s:suite.blockbC_whole() abort " {{{
   let str2 = 'ppppppppppppppppbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
   let str3 = 'min'
   let str = join([str1,str2,str3], "\n")
-  call s:wholet("\<C-v>", str, 'bC', [s:lines[0], str1, str2, str3])
+  call s:wholet("\<C-v>", str, 'uD', [s:lines[0], str1, str2, str3])
 endfunction " }}}
 
 function! s:suite.blockc_whole() abort " {{{
@@ -137,7 +137,7 @@ function! s:suite.blockc_whole() abort " {{{
   let str4 = 'ddddggg00gggddddddd'
   let str5 = '@@!"#%&''&%$#%&%$'
   let str = join([str1,str2,str3,str4,str5], "\n")
-  call s:wholet("\<C-v>", str, 'c', [str1, str2, str3,str4])
+  call s:wholet("\<C-v>", str, 'd', [str1, str2, str3,str4])
 endfunction " }}}
 
 function! s:suite.blockcb_whole() abort " {{{
@@ -147,7 +147,7 @@ function! s:suite.blockcb_whole() abort " {{{
   let str4 = 'ddddggg00gggddddddd'
   let str5 = '@@!"#%&''&%$#%&%$'
   let str = join([str1,str2,str3,str4,str5], "\n")
-  call s:wholet("\<C-v>", str, 'cb', [str2,str3,str4,str5])
+  call s:wholet("\<C-v>", str, 'ud', [str2,str3,str4,str5])
 endfunction " }}}
 
 function! s:suite.blocko_whole() abort " {{{
@@ -207,7 +207,7 @@ function! s:suite.blocktC_sub() abort " {{{
   endfor
   let strs[2] = s:lines[2]
   let strs[3] = s:lines[3]
-  call s:whole10l("\<C-v>", str, 'C', strs)
+  call s:whole10l("\<C-v>", str, 'D', strs)
 endfunction " }}}
 
 function! s:suite.blockb_sub() abort " {{{
@@ -220,7 +220,7 @@ function! s:suite.blockb_sub() abort " {{{
     let strs[i] = s:lines[i][:7] . strs[i] . s:lines[i][14:]
   endfor
   let strs[3] = s:lines[3]
-  call s:whole10l("\<C-v>", str, 'b', strs)
+  call s:whole10l("\<C-v>", str, 'u', strs)
 endfunction " }}}
 
 function! s:suite.blockbC_sub() abort " {{{
@@ -234,7 +234,7 @@ function! s:suite.blockbC_sub() abort " {{{
   endfor
   let strs[0] = s:lines[0]
   let strs[3] = s:lines[3]
-  call s:whole10l("\<C-v>", str, 'bC', strs)
+  call s:whole10l("\<C-v>", str, 'uD', strs)
 endfunction " }}}
 
 function! s:suite.blockc_sub() abort " {{{
@@ -249,7 +249,7 @@ function! s:suite.blockc_sub() abort " {{{
     let strs[i] = s:lines[i][:7] . strs[i] . s:lines[i][14:]
   endfor
   let strs[3] = s:lines[3]
-  call s:whole10l("\<C-v>", str, 'c', strs[:3])
+  call s:whole10l("\<C-v>", str, 'd', strs[:3])
 endfunction " }}}
 
 function! s:suite.blockcb_sub() abort " {{{
@@ -264,7 +264,7 @@ function! s:suite.blockcb_sub() abort " {{{
     let strs[i] = s:lines[i][:7] . strs[i+2] . s:lines[i][14:]
   endfor
   let strs[3] = s:lines[3]
-  call s:whole10l("\<C-v>", str, 'cb', strs[:3])
+  call s:whole10l("\<C-v>", str, 'ud', strs[:3])
 endfunction " }}}
 
 function! s:suite.blocko_sub() abort " {{{
