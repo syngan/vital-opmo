@@ -65,10 +65,6 @@ endfunction " }}}
 # Real World Examples
 
 - [syngan/vim-operator-furround](https://github.com/syngan/vim-operator-furround)
-<<<<<<< HEAD
-- [syngan/vim-operator-inserttext](https://github.com/syngan/vim-operator-inserttext)
-=======
 - [syngan/vim-operator-evalf](https://github.com/syngan/vim-operator-evalf)
->>>>>>> c725e19cd02a052ee5bef2379e59b7ee362830bf
 - [syngan/vim-bluemoon](https://github.com/syngan/vim-bluemoon)
 
