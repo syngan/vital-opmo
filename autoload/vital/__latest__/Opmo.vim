@@ -54,9 +54,10 @@ function! s:_funcs.block.yank(reg) abort " {{{
   call s:_knormal(printf('gv"%sy', a:reg))
 endfunction " }}}
 
-function! s:yank(motion, reg) abort " {{{
+function! s:yank(motion, ...) abort " {{{
+  let reg = get(a:000, 0, '"')
   let fdic = s:_funcs[a:motion]
-  return fdic.yank(a:reg)
+  return fdic.yank(reg)
 endfunction " }}}
 "}}}
 
