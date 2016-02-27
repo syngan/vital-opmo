@@ -1,0 +1,72 @@
+*vital-opmo.txt*			operator-user utilities library.
+
+==============================================================================
+CONTENTS				*Vital.Opmo-contents*
+
+INTRODUCTION				|Vital.Opmo-introduction|
+INTERFACE				|Vital.Opmo-interface|
+  Functions				  |Vital.Opmo-functions|
+
+==============================================================================
+INTRODUCTION				*Vital.Opmo-introduction*
+
+*Vital.Opmo* is a utilities library to use |operator-user| easily.
+
+==============================================================================
+INTERFACE				*Vital.Opmo-interface*
+------------------------------------------------------------------------------
+FUNCTIONS				*Vital.Opmo-functions*
+
+{motion_wise} is "char", "line", or "block" which is given by |operator-user|.
+
+
+yank({motion_wise} [, {reg}])			*Vital.Opmo.yank()*
+	Yank a specified text into register {reg}.
+
+gettext({motion_wise})				*Vital.Opmo.gettext()*
+	Return a specified text.
+
+highlight({motion_wise}, {group} [, {priority}])	*Vital.Opmo.highlight()*
+	Highlight a specified text with {group}.  Return a List of ID.
+	For the use of {group} and {priority} see |matchadd()|.
+
+unhighlight({ids})				*Vital.Opmo.unhighlight()*
+	Unhighlight {ids} which is a return value of |Vital.Opmo.highlight()|.
+
+replace({motion_wise}, {str} [, {flags}])	*Vital.Opmo.replace()*
+	Replace a specified text with {str}.
+
+	{flags} is a String, which can contain these character flags:
+	'u' 	bottom align (block)
+	'd'	do nothing for line underflow (block)
+	'D'	do nothing for line overflow  (block)
+
+wrap({motion_wise}, {left}, {right} [, {flags}])		*Vital.Opmo.wrap()*
+	Wrap a specified text with {left} and {right}.
+
+	{flags} is a String, which can contain these character flags:
+	'n' 	line break (line)
+	'w'	wrap whole text (block)
+	'v'	vertical (block)
+
+insert_after({motion_wise}, {str}, [, {flags}])	*Vital.Opmo.insert_after()*
+	Insert {str} after a specified text.
+
+	Note: Same as Vital.Opmo.wrap({motion_wise}, "", {str}, {flags}).
+
+insert_before({motion_wise}, {str}, [, {flags}])	*Vital.Opmo.insert_before()*
+	Insert {str} before a specified text.
+
+	Note: Same as Vital.Opmo.wrap({motion_wise}, {str}, "", {flags}).
+
+
+eachline({motion_wise}, {func}, [, {flags}])	*Vital.Opmo.eachline()*
+	Execute {func}({motion_wise}) for each line in a specified text.
+
+	{flags} is a String, which can contain these character flags:
+	'c' 	(char)
+	'l'	(line)
+	'b'	(block)
+
+==============================================================================
+vim:tw=78:fo=tcq2mM:ts=8:ft=help:norl
