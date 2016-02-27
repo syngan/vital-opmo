@@ -330,6 +330,84 @@ function! s:insert_after(motion, str, ...) abort " {{{
   return call(function('s:wrap'), [a:motion, '', a:str] + a:000)
 endfunction " }}}
 
+" eachline {{{
+function! s:_funcs.char.eachline(func, reg, regdic, ...) abort " {{{
+  let spos = getpos("'[")
+  let epos = getpos("']")
+  if spos[1] == epos[1]
+    return a:func('char')
+  endif
+  call setpos('.', [epos[0], epos[1], 1, epos[3]])
+  call s:_knormal(printf('v%dl"%sy', epos[2]-1, a:reg))
+  call s:_reg_restore(a:regdic)
+  call a:func('char')
+  let epos[2] = 1
+  for i in range(epos[1]-1, spos[1]+1, -1)
+    let epos[1] = i
+    call setpos('.', epos)
+    call s:_knormal(printf('V"%sy', a:reg))
+    call s:_reg_restore(a:regdic)
+    call a:func('line')
+  endfor
+  call setpos('.', spos)
+  call s:_knormal(printf('v$h"%sy', a:reg))
+  call s:_reg_restore(a:regdic)
+  call a:func('char')
+endfunction " }}}
+
+function! s:_funcs.line.eachline(func, reg, regdic, ...) abort " {{{
+  let spos = getpos("'[")
+  let epos = getpos("']")
+  if spos[1] == epos[1]
+    return a:func('line')
+  endif
+  for i in range(epos[1], spos[1], -1)
+    let epos[1] = i
+    call setpos('.', epos)
+    call s:_knormal(printf('V"%sy', a:reg))
+    call s:_reg_restore(a:regdic)
+    call a:func('line')
+  endfor
+endfunction " }}}
+
+function! s:_funcs.block.eachline(func, reg, regdic, ...) abort " {{{
+  let spos = getpos("'[")
+  let epos = getpos("']")
+  if spos[1] == epos[1]
+    return a:func('char')
+  endif
+  call s:_knormal('gv"' . a:reg . 'y')
+  let width = s:_block_width(a:reg) - 1
+  let epos[2] = spos[2]
+  for i in range(epos[1], spos[1], -1)
+    let epos[1] = i
+    call setpos('.', epos)
+    let l = len(getline(i))
+    let w = (l < spos[2] + width) ? l - spos[2]: width
+    if w == 0
+      call s:_knormal(printf('v"%sy', a:reg))
+    else
+      call s:_knormal(printf('v%dl"%sy', w, a:reg))
+    endif
+    call s:_reg_restore(a:regdic)
+    call a:func('char')
+  endfor
+endfunction " }}}
+
+function! s:eachline(motion, func, flags) abort " {{{
+  if a:flags =~# a:motion[0]
+    return a:func(a:motion)
+  endif
+
+  let [reg; regdic] = s:_reg_save()
+  try
+    return s:_funcs[a:motion].eachline(a:func, reg, regdic, a:flags)
+  finally
+    call s:_reg_restore(regdic)
+  endtry
+endfunction " }}}
+" }}}
+
 let &cpo = s:save_cpo
 unlet s:save_cpo
 
