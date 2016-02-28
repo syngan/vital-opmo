@@ -59,7 +59,6 @@ insert_before({motion_wise}, {str}, [, {flags}])	*Vital.Opmo.insert_before()*
 
 	Note: Same as Vital.Opmo.wrap({motion_wise}, {str}, "", {flags}).
 
-
 eachline({motion_wise}, {func}, [, {flags}])	*Vital.Opmo.eachline()*
 	Execute {func}({motion_wise}) for each line in a specified text.
 

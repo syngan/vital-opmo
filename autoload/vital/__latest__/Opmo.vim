@@ -22,7 +22,7 @@ function! s:_knormal(s) abort " {{{
   execute 'keepjumps' 'silent' 'normal!' a:s
 endfunction " }}}
 
-function! s:_reg_save() abort " {{{
+function! s:_reg_save(...) abort " {{{
   let reg = '"'
   let regdic = {}
   for r in [reg]
@@ -31,7 +31,8 @@ function! s:_reg_save() abort " {{{
   let sel_save = &selection
   let &selection = "inclusive"
 
-  return [reg, regdic, sel_save]
+  let mark = (a:0 == 0) ? {} : {a:1 : getpos("'" . a:1)}
+  return [reg, regdic, sel_save, mark]
 endfunction " }}}
 
 function! s:_reg_restore(regdic) abort " {{{
@@ -39,6 +40,9 @@ function! s:_reg_restore(regdic) abort " {{{
     call setreg(reg, val[0], val[1])
   endfor
   let &selection = a:regdic[1]
+  for [m, pos] in items(a:regdic[2])
+    call setpos("'" . m, pos)
+  endfor
 endfunction " }}}
 
 function! s:_block_width(reg) abort " {{{
@@ -331,59 +335,53 @@ function! s:insert_after(motion, str, ...) abort " {{{
 endfunction " }}}
 
 " eachline {{{
-function! s:_funcs.char.eachline(func, reg, regdic, ...) abort " {{{
-  let spos = getpos("'[")
-  let epos = getpos("']")
-  if spos[1] == epos[1]
-    return a:func('char')
-  endif
-  call setpos('.', [epos[0], epos[1], 1, epos[3]])
-  call s:_knormal(printf('v%dl"%sy', epos[2]-1, a:reg))
-  call s:_reg_restore(a:regdic)
+function! s:_funcs.char.eachline(func, reg, regdic, spos, epos, ...) abort " {{{
+  let pos =[a:epos[0], a:epos[1], 1, a:epos[3]]
+  call setpos("'[", pos)
+  let pos[2] = a:epos[2]
+  call setpos("']", pos)
   call a:func('char')
-  let epos[2] = 1
-  for i in range(epos[1]-1, spos[1]+1, -1)
-    let epos[1] = i
-    call setpos('.', epos)
+  let pos[2] = 1
+  for i in range(a:epos[1]-1, a:spos[1]+1, -1)
+    let pos[1] = i
+    call setpos('.', pos)
     call s:_knormal(printf('V"%sy', a:reg))
     call s:_reg_restore(a:regdic)
     call a:func('line')
   endfor
-  call setpos('.', spos)
+  call setpos('.', a:spos)
   call s:_knormal(printf('v$h"%sy', a:reg))
   call s:_reg_restore(a:regdic)
   call a:func('char')
+
+  call setpos("'[", a:spos)
+  call setpos("']", a:epos)
 endfunction " }}}
 
-function! s:_funcs.line.eachline(func, reg, regdic, ...) abort " {{{
-  let spos = getpos("'[")
-  let epos = getpos("']")
-  if spos[1] == epos[1]
-    return a:func('line')
-  endif
-  for i in range(epos[1], spos[1], -1)
-    let epos[1] = i
-    call setpos('.', epos)
+function! s:_funcs.line.eachline(func, reg, regdic, spos, epos, ...) abort " {{{
+  let pos = copy(a:epos)
+  for i in range(a:epos[1], a:spos[1], -1)
+    let pos[1] = i
+    call setpos('.', pos)
     call s:_knormal(printf('V"%sy', a:reg))
     call s:_reg_restore(a:regdic)
     call a:func('line')
   endfor
+  call setpos("'[", a:spos)
+  call setpos("']", a:epos)
 endfunction " }}}
 
-function! s:_funcs.block.eachline(func, reg, regdic, ...) abort " {{{
-  let spos = getpos("'[")
-  let epos = getpos("']")
-  if spos[1] == epos[1]
-    return a:func('char')
-  endif
+function! s:_funcs.block.eachline(func, reg, regdic, spos, epos, ...) abort " {{{
+  let mark = 'a'
+  let pos = copy(a:epos)
   call s:_knormal('gv"' . a:reg . 'y')
   let width = s:_block_width(a:reg) - 1
-  let epos[2] = spos[2]
-  for i in range(epos[1], spos[1], -1)
-    let epos[1] = i
-    call setpos('.', epos)
+  let pos[2] = a:spos[2]
+  for i in range(a:epos[1], a:spos[1], -1)
+    let pos[1] = i
+    call setpos('.', pos)
     let l = len(getline(i))
-    let w = (l < spos[2] + width) ? l - spos[2]: width
+    let w = (l < a:spos[2] + width) ? l - a:spos[2]: width
     if w == 0
       call s:_knormal(printf('v"%sy', a:reg))
     else
@@ -392,16 +390,30 @@ function! s:_funcs.block.eachline(func, reg, regdic, ...) abort " {{{
     call s:_reg_restore(a:regdic)
     call a:func('char')
   endfor
+  let l = len(getline(a:epos[1]))
+  if a:spos[2] + width > a:epos[2]
+    call setpos('.', a:spos)
+    call s:_knormal(printf("\<C-v>%dj$\"%sy", a:epos[1] - a:spos[1], a:reg))
+  else
+    call setpos("'" . mark , a:epos)
+    call setpos('.', a:spos)
+    call s:_knormal(printf("\<C-v>`%s\"%sy", mark, a:reg))
+  endif
 endfunction " }}}
 
 function! s:eachline(motion, func, flags) abort " {{{
   if a:flags =~# a:motion[0]
     return a:func(a:motion)
   endif
+  let spos = getpos("'[")
+  let epos = getpos("']")
+  if spos[1] == epos[1]
+    return a:func(a:motion)
+  endif
 
-  let [reg; regdic] = s:_reg_save()
+  let [reg; regdic] = s:_reg_save('a')
   try
-    return s:_funcs[a:motion].eachline(a:func, reg, regdic, a:flags)
+    return s:_funcs[a:motion].eachline(a:func, reg, regdic, spos, epos, a:flags)
   finally
     call s:_reg_restore(regdic)
   endtry
