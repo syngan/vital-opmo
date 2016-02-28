@@ -140,6 +140,39 @@ function! s:suite.block_dol() abort " {{{
   cal s:check(act, str, '', exp)
 endfunction " }}}
 
+function! s:suite.char_whole() abort " {{{
+  let exp = copy(s:lines)
+  let str = '1234'
+  let exp[0] = '(' . str
+  let exp[1] = str
+  let exp[2] = str
+  let exp[3] = str . ')'
+  let act = "gg0vG$\<Plug>(operator-opmo-eachline-themis)"
+  cal s:check(act, str, '', exp)
+endfunction " }}}
+
+function! s:suite.line_whole() abort " {{{
+  let exp = copy(s:lines)
+  let str = '1234'
+  let exp[0] = '(' . str
+  let exp[1] = str
+  let exp[2] = str
+  let exp[3] = str . ')'
+  let act = "ggVG\<Plug>(operator-opmo-eachline-themis)"
+  cal s:check(act, str, '', exp)
+endfunction " }}}
+
+function! s:suite.block_whole() abort " {{{
+  let exp = copy(s:lines)
+  let str = '1234'
+  let exp[0] = '(' . str
+  let exp[1] = str
+  let exp[2] = str
+  let exp[3] = str . ')'
+  let act = "gg0\<C-v>G$\<Plug>(operator-opmo-eachline-themis)"
+  cal s:check(act, str, '', exp)
+endfunction " }}}
+
 let &cpo = s:save_cpo
 unlet s:save_cpo
 
