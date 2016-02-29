@@ -14,7 +14,7 @@ let s:pos = ''
 function! OpmoWrapThemis(motion) abort " {{{
   call s:f.wrap(a:motion, '123', '456', s:pos)
 endfunction " }}}
-call operator#user#define('opmo-wrap', 'OpmoWrapThemis')
+call operator#user#define('opmo-wrap-themis', 'OpmoWrapThemis')
 
 let s:lines = [
       \ 'aaaaaaaaaaaaaaaa',
@@ -35,7 +35,7 @@ endfunction " }}}
 
 function! s:linet(n, v) abort " {{{
   cal setreg('"', s:regval, 'v')
-  execute 'normal' a:n . 'G0' . a:v . "\<Plug>(operator-opmo-wrap)"
+  execute 'normal' a:n . 'G0' . a:v . "\<Plug>(operator-opmo-wrap-themis)"
   for i in range(1, 4)
     if i == a:n
       call s:assert.equals(getline(i), '123' . s:lines[i-1] . '456', i)
@@ -98,7 +98,7 @@ endfunction " }}}
 function! s:wholet(v, pos, each) abort " {{{
   let s:pos = a:pos
   cal setreg('"', s:regval, 'v')
-  execute 'normal' 'gg0' . a:v . "G$\<Plug>(operator-opmo-wrap)"
+  execute 'normal' 'gg0' . a:v . "G$\<Plug>(operator-opmo-wrap-themis)"
   for i in range(1, 4)
     if a:each
       call s:assert.equals(getline(i), '123' . s:lines[i-1] . '456', i)
@@ -140,35 +140,42 @@ endfunction " }}}
 
 function! s:suite.char_mid() abort " {{{
   cal setreg('"', s:regval, 'v')
-  execute 'normal' "1G0\<Plug>(operator-opmo-wrap)4l"
+  execute 'normal' "1G0\<Plug>(operator-opmo-wrap-themis)4l"
   let exp = copy(s:lines)
   let exp[0] = substitute(exp[0], '^....\zs', '456', '')
   let exp[0] = substitute(exp[0], '^', '123', '')
   call s:check(exp)
 
-  execute 'normal' "2G3l\<Plug>(operator-opmo-wrap)2l"
+  execute 'normal' "2G3l\<Plug>(operator-opmo-wrap-themis)2l"
   let exp[1] = substitute(exp[1], '^.....\zs', '456', '')
   let exp[1] = substitute(exp[1], '^...\zs', '123', '')
   call s:check(exp)
 
-  execute 'normal' "3G3l\<Plug>(operator-opmo-wrap)$"
+  execute 'normal' "3G3l\<Plug>(operator-opmo-wrap-themis)$"
   let exp[2] = substitute(exp[2], '$', '456', '')
   let exp[2] = substitute(exp[2], '^...\zs', '123', '')
   call s:check(exp)
 " call writefile(getline(1, 4), '/tmp/wrap', 'a')
 endfunction " }}}
 
-
 function! s:suite.blocke_mid() abort " {{{
   let exp = copy(s:lines)
-  execute 'normal' "1G0\<C-v>4lj\<Plug>(operator-opmo-wrap)"
+  if &selection ==# 'exclusive'
+    execute 'normal' "1G0\<C-v>5lj\<Plug>(operator-opmo-wrap-themis)"
+  else
+    execute 'normal' "1G0\<C-v>4lj\<Plug>(operator-opmo-wrap-themis)"
+  endif
   let exp[0] = substitute(exp[0], '^.....\zs', '456', '')
   let exp[0] = substitute(exp[0], '^', '123', '')
   let exp[1] = substitute(exp[1], '^.....\zs', '456', '')
   let exp[1] = substitute(exp[1], '^', '123', '')
   call s:check(exp)
 
-  execute 'normal' "2G05l\<C-v>2l2j\<Plug>(operator-opmo-wrap)"
+  if &selection ==# 'exclusive'
+    execute 'normal' "2G05l\<C-v>3l2j\<Plug>(operator-opmo-wrap-themis)"
+  else
+    execute 'normal' "2G05l\<C-v>2l2j\<Plug>(operator-opmo-wrap-themis)"
+  endif
   for i in [1,2,3]
     let exp[i] = substitute(exp[i], '^........\zs', '456', '')
     let exp[i] = substitute(exp[i], '^.....\zs', '123', '')
@@ -178,7 +185,11 @@ endfunction " }}}
 
 function! s:suite.blocke_end() abort " {{{
   let exp = copy(s:lines)
-  execute 'normal' "1G13l\<C-v>4l3j\<Plug>(operator-opmo-wrap)"
+  if &selection ==# 'exclusive'
+    execute 'normal' "1G13l\<C-v>3j4l\<Plug>(operator-opmo-wrap-themis)"
+  else
+    execute 'normal' "1G13l\<C-v>3j3l\<Plug>(operator-opmo-wrap-themis)"
+  endif
   for i in [0,1,2,3]
     if len(exp[i]) >= 13
       if len(exp[i]) < 17

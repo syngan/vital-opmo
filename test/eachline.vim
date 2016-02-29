@@ -114,7 +114,7 @@ function! s:suite.block_mline() abort " {{{
   let exp[0] = substitute(exp[0], 'aaaB', '(' . str, '')
   let exp[1] = substitute(exp[1], 'cB..', str, '')
   let exp[2] = substitute(exp[2], 'A\zs bbb', str . ')', '')
-  let act = "\<C-v>2j3l\<Plug>(operator-opmo-eachline-themis)"
+  let act = "\<C-v>e2j\<Plug>(operator-opmo-eachline-themis)"
   cal s:check(act, str, '', exp)
 endfunction " }}}
 
@@ -125,7 +125,11 @@ function! s:suite.block_over() abort " {{{
   let exp[0] = substitute(exp[0], 'aD a', '(' . str, '')
   let exp[1] = substitute(exp[1], 'cE', str, '')
   let exp[2] = substitute(exp[2], ' bbb\zebD', str . ')', '')
-  let act = "\<C-v>2j3l\<Plug>(operator-opmo-eachline-themis)"
+  if &selection ==# 'exclusive'
+    let act = "\<C-v>2j4l\<Plug>(operator-opmo-eachline-themis)"
+  else
+    let act = "\<C-v>2j3l\<Plug>(operator-opmo-eachline-themis)"
+  endif
   cal s:check(act, str, '', exp)
 endfunction " }}}
 
