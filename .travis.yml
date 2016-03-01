@@ -23,4 +23,5 @@ script:
   - /tmp/vim-themis/bin/themis --runtimepath /tmp/vim-operator-user
   - echo 'set selection=old' > test/.themisrc
   - /tmp/vim-themis/bin/themis --runtimepath /tmp/vim-operator-user
+  -  if grep opmo#log autoload/vital/__latest__/Opmo.vim; then exit 1; else exit 0; fi
 
