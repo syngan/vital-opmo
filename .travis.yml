@@ -7,4 +7,21 @@ before_script:
 script:
   - sh /tmp/vim-vimlint/bin/vimlint.sh -l /tmp/vim-vimlint -p /tmp/vim-vimlparser plugin autoload
   - /tmp/vim-themis/bin/themis --runtimepath /tmp/vim-operator-user
+  - echo 'set selection=exclusive' > test/.themisrc
+  - /tmp/vim-themis/bin/themis --runtimepath /tmp/vim-operator-user
+  - echo 'set selection=exclusive' > test/.themisrc
+  - echo 'set virtualedit=block' >> test/.themisrc
+  - /tmp/vim-themis/bin/themis --runtimepath /tmp/vim-operator-user
+  - echo 'set selection=exclusive' > test/.themisrc
+  - echo 'set virtualedit=insert' >> test/.themisrc
+  - /tmp/vim-themis/bin/themis --runtimepath /tmp/vim-operator-user
+# - echo 'set selection=exclusive' > test/.themisrc
+# - echo 'set virtualedit=all' >> test/.themisrc
+# - /tmp/vim-themis/bin/themis --runtimepath /tmp/vim-operator-user
+  - echo 'set selection=exclusive' > test/.themisrc
+  - echo 'set virtualedit=onemore' >> test/.themisrc
+  - /tmp/vim-themis/bin/themis --runtimepath /tmp/vim-operator-user
+  - echo 'set selection=old' > test/.themisrc
+  - /tmp/vim-themis/bin/themis --runtimepath /tmp/vim-operator-user
+  -  if grep opmo#log autoload/vital/__latest__/Opmo.vim; then exit 1; else exit 0; fi
 

@@ -15,7 +15,7 @@ let s:str = ''
 function! OpmoReplaceThemis(motion) abort " {{{
   call s:f.replace(a:motion, s:str, s:flags)
 endfunction " }}}
-call operator#user#define('opmo-replace', 'OpmoReplaceThemis')
+call operator#user#define('opmo-replace-themis', 'OpmoReplaceThemis')
 
 let s:lines = [
       \ 'aaaaaaaaaaaaaaaa',
@@ -40,7 +40,7 @@ function! s:check(v, str, flag, exp) abort " {{{
   let s:flags = a:flag
   let s:str = a:str
   cal setreg('"', s:regval, 'v')
-  execute 'normal' a:v . "\<Plug>(operator-opmo-replace)"
+  execute 'normal' a:v . "\<Plug>(operator-opmo-replace-themis)"
   for i in range(len(a:exp))
     call s:assert.equals(getline(i+1), a:exp[i], i+1)
   endfor
@@ -162,7 +162,11 @@ function! s:suite.blocko_whole() abort " {{{
 endfunction " }}}
 
 function! s:whole10l(v, str, flag, exp) abort " {{{
-  call s:check('gg08l' . a:v . '2j5l', a:str, a:flag, a:exp)
+  if &selection == 'exclusive'
+    call s:check('gg08l' . a:v . '2j6l', a:str, a:flag, a:exp)
+  else
+    call s:check('gg08l' . a:v . '2j5l', a:str, a:flag, a:exp)
+  endif
 endfunction " }}}
 
 function! s:suite.char_sub() abort " {{{

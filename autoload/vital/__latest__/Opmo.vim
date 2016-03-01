@@ -18,31 +18,33 @@ set cpo&vim
 
 let s:_funcs = {'char' : {'v':'v'}, 'line': {'v':'V'}, 'block': {'v':"\<C-v>"}}
 
+
 function! s:_knormal(s) abort " {{{
   execute 'keepjumps' 'silent' 'normal!' a:s
 endfunction " }}}
 
-function! s:_reg_save(...) abort " {{{
+function! s:_reg_save(motion) abort " {{{
   let reg = '"'
   let regdic = {}
   for r in [reg]
     let regdic[r] = [getreg(r), getregtype(r)]
   endfor
+    if a:motion ==# 'block'
+    call s:_knormal(printf('gv"%sy', reg))
+  endif
   let sel_save = &selection
   let &selection = "inclusive"
 
-  let mark = (a:0 == 0) ? {} : {a:1 : getpos("'" . a:1)}
-  return [reg, regdic, sel_save, mark]
+  return [reg, regdic, sel_save]
 endfunction " }}}
 
-function! s:_reg_restore(regdic) abort " {{{
+function! s:_reg_restore(regdic, ...) abort " {{{
   for [reg, val] in items(a:regdic[0])
     call setreg(reg, val[0], val[1])
   endfor
-  let &selection = a:regdic[1]
-  for [m, pos] in items(a:regdic[2])
-    call setpos("'" . m, pos)
-  endfor
+  if get(a:000, 0, 0) == 0
+    let &selection = a:regdic[1]
+  endif
 endfunction " }}}
 
 function! s:_block_width(reg) abort " {{{
@@ -50,39 +52,43 @@ function! s:_block_width(reg) abort " {{{
 endfunction " }}}
 
 " yank(motion) {{{
-function! s:_funcs.char.yank(reg) abort " {{{
-  call s:_knormal(printf('`[v`]"%sy', a:reg))
-endfunction " }}}
-
-function! s:_funcs.line.yank(reg) abort " {{{
-  call s:_knormal(printf('`[V`]"%sy', a:reg))
-endfunction " }}}
-
-function! s:_funcs.block.yank(reg) abort " {{{
-  call s:_knormal(printf('gv"%sy', a:reg))
-endfunction " }}}
-
 function! s:yank(motion, ...) abort " {{{
-  let reg = get(a:000, 0, '"')
-  let fdic = s:_funcs[a:motion]
-  return fdic.yank(reg)
+  let regx = get(a:000, 0, '"')
+  let txt = s:gettext(a:motion)
+  call setreg(regx, txt, a:motion[0])
 endfunction " }}}
 "}}}
 
+" gettext() {{{
 function! s:gettext(motion) abort " {{{
-  let [reg; regdic] = s:_reg_save()
+  let [reg; regdic] = s:_reg_save(a:motion)
   try
-    call s:yank(a:motion, reg)
-    return getreg(reg)
+    let fdic = s:_funcs[a:motion]
+    return fdic.gettext(reg)
   finally
     call s:_reg_restore(regdic)
   endtry
 endfunction " }}}
 
+function! s:_funcs.char.gettext(reg) abort " {{{
+  call s:_knormal(printf('`[v`]"%sy', a:reg))
+  return getreg(a:reg)
+endfunction " }}}
+
+function! s:_funcs.line.gettext(reg) abort " {{{
+  call s:_knormal(printf('`[V`]"%sy', a:reg))
+  return getreg(a:reg)
+endfunction " }}}
+
+function! s:_funcs.block.gettext(reg) abort " {{{
+  return getreg(a:reg)
+endfunction " }}}
+"}}}
+
 " highlight(motion, hlgroup, priority...) {{{
 function! s:highlight(motion, hlgroup, ...) abort " {{{
   let fdic = s:_funcs[a:motion]
-  let [reg; regdic] = s:_reg_save()
+  let [reg; regdic] = s:_reg_save(a:motion)
   let priority = get(a:, '1', 10)
 
   try
@@ -130,7 +136,7 @@ endfunction " }}}
 " replace(motion, str, flags) {{{
 function! s:replace(motion, str, ...) abort " {{{
   let fdic = s:_funcs[a:motion]
-  let [reg; regdic] = s:_reg_save()
+  let [reg; regdic] = s:_reg_save(a:motion)
 
   try
     return fdic.replace(a:str, reg, get(a:000, 0, ''))
@@ -181,7 +187,6 @@ endfunction " }}}
 " line 直前の行にペースト
 " block 頭から. あとは切り詰め. あふれたら後ろに
 function! s:_funcs.block.replace(str, reg, flags) abort " {{{
-  call s:_knormal('gv"' . a:reg . 'y')
   let spos = getpos("'[")
   let epos = getpos("']")
   let width = s:_block_width(a:reg)
@@ -242,7 +247,7 @@ endfunction " }}}
 " wrap {{{
 function! s:wrap(motion, left, right, ...) abort " {{{
   let fdic = s:_funcs[a:motion]
-  let [reg; regdic] = s:_reg_save()
+  let [reg; regdic] = s:_reg_save(a:motion)
 
   try
     return fdic.wrap(a:left, a:right, reg, get(a:000, 0, ''))
@@ -290,7 +295,6 @@ endfunction " }}}
 function! s:block_wrap_eachline(left, right, reg) abort " {{{
   " 各行について char する.
   " left, right が改行文字をもつと壊れる
-  call s:_knormal(printf('gv"%sy', a:reg))
   let spos = getpos("'[")
   let epos = getpos("']")
   let end = str2nr(getregtype(a:reg)[1:]) + spos[2] - 1
@@ -311,7 +315,6 @@ function! s:block_wrap_eachline(left, right, reg) abort " {{{
 endfunction " }}}
 
 function! s:block_wrap_vertical(left, right, reg) abort " {{{
-  call s:_knormal(printf('gv"%sy', a:reg))
   let spos = getpos("'[")
   let blank = repeat(' ', spos[1]-1)
 
@@ -336,24 +339,29 @@ endfunction " }}}
 
 " eachline {{{
 function! s:_funcs.char.eachline(func, reg, regdic, spos, epos, ...) abort " {{{
+  " last line
   let pos =[a:epos[0], a:epos[1], 1, a:epos[3]]
   call setpos("'[", pos)
   let pos[2] = a:epos[2]
   call setpos("']", pos)
   call a:func('char')
   let pos[2] = 1
+  " mid
   for i in range(a:epos[1]-1, a:spos[1]+1, -1)
     let pos[1] = i
     call setpos('.', pos)
-    call s:_knormal(printf('V"%sy', a:reg))
-    call s:_reg_restore(a:regdic)
+    call s:_knormal(printf("V\"%sy", a:reg))
+    call s:_reg_restore(a:regdic, 1)
     call a:func('line')
   endfor
-  call setpos('.', a:spos)
-  call s:_knormal(printf('v$h"%sy', a:reg))
-  call s:_reg_restore(a:regdic)
+  " first line
+  call setpos('''[', a:spos)
+  let pos =[a:spos[0], a:spos[1], len(getline(a:spos[1])), a:spos[3]]
+  call setpos(''']', pos)
+  call s:_reg_restore(a:regdic, 1)
   call a:func('char')
 
+  " finalize.
   call setpos("'[", a:spos)
   call setpos("']", a:epos)
 endfunction " }}}
@@ -372,9 +380,8 @@ function! s:_funcs.line.eachline(func, reg, regdic, spos, epos, ...) abort " {{{
 endfunction " }}}
 
 function! s:_funcs.block.eachline(func, reg, regdic, spos, epos, ...) abort " {{{
-  let mark = 'a'
+  let mark = '`'
   let pos = copy(a:epos)
-  call s:_knormal('gv"' . a:reg . 'y')
   let width = s:_block_width(a:reg) - 1
   let pos[2] = a:spos[2]
   for i in range(a:epos[1], a:spos[1], -1)
@@ -387,14 +394,20 @@ function! s:_funcs.block.eachline(func, reg, regdic, spos, epos, ...) abort " {{
     else
       call s:_knormal(printf('v%dl"%sy', w, a:reg))
     endif
-    call s:_reg_restore(a:regdic)
+    call s:_reg_restore(a:regdic, 1) " a:reg の引き戻し.
     call a:func('char')
   endfor
+
+  " reset '[, '], exclusive だと gv すると一つずれる.
   let l = len(getline(a:epos[1]))
   if a:spos[2] + width > a:epos[2]
     call setpos('.', a:spos)
     call s:_knormal(printf("\<C-v>%dj$\"%sy", a:epos[1] - a:spos[1], a:reg))
   else
+    if a:regdic[1] == 'exclusive'
+      set selection=exclusive
+      let a:epos[2] += 1
+    endif
     call setpos("'" . mark , a:epos)
     call setpos('.', a:spos)
     call s:_knormal(printf("\<C-v>`%s\"%sy", mark, a:reg))
@@ -411,7 +424,7 @@ function! s:eachline(motion, func, flags) abort " {{{
     return a:func(a:motion)
   endif
 
-  let [reg; regdic] = s:_reg_save('a')
+  let [reg; regdic] = s:_reg_save(a:motion)
   try
     return s:_funcs[a:motion].eachline(a:func, reg, regdic, spos, epos, a:flags)
   finally
