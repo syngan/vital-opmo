@@ -92,15 +92,14 @@ function! s:highlight(motion, hlgroup, ...) abort " {{{
   let priority = get(a:, '1', 10)
 
   try
-    let mids = fdic.highlight(reg, getpos("'["), getpos("']"), a:hlgroup, priority)
+    let mids = fdic.highlight(a:hlgroup, priority, getpos("'["), getpos("']"), reg)
     return mids
   finally
     call s:_reg_restore(regdic)
   endtry
 endfunction " }}}
 
-function! s:_funcs.char.highlight(reg, begin, end, hlgroup, priority) abort " {{{
-  call s:_knormal(printf('`[v`]"%sy', a:reg))
+function! s:_funcs.char.highlight(hlgroup, priority, begin, end, ...) abort " {{{
   if a:begin[1] == a:end[1]
     return [matchadd(a:hlgroup,
     \ printf('\%%%dl\%%>%dc\%%<%dc', a:begin[1], a:begin[2]-1, a:end[2]+1), a:priority)]
@@ -112,13 +111,11 @@ function! s:_funcs.char.highlight(reg, begin, end, hlgroup, priority) abort " {{
   endif
 endfunction " }}}
 
-function! s:_funcs.line.highlight(reg, begin, end, hlgroup, priority) abort " {{{
-  call s:_knormal(printf('`[V`]"%sy', a:reg))
+function! s:_funcs.line.highlight(hlgroup, priority, begin, end, ...) abort " {{{
   return [matchadd(a:hlgroup, printf('\%%>%dl\%%<%dl', a:begin[1]-1, a:end[1]+1), a:priority)]
 endfunction " }}}
 
-function! s:_funcs.block.highlight(reg, begin, end, hlgroup, priority) abort " {{{
-  call s:_knormal(printf('gv"%sy', a:reg))
+function! s:_funcs.block.highlight(hlgroup, priority, begin, end, reg) abort " {{{
   let width = s:_block_width(a:reg)
   echomsg width
   return [matchadd(a:hlgroup,
