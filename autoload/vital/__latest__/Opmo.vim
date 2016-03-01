@@ -30,6 +30,7 @@ function! s:_reg_save(motion) abort " {{{
   endfor
   if a:motion ==# 'block'
     call s:_knormal(printf('gv"%sy', dict.reg))
+    let dict.bwidth = str2nr(getregtype(dict.reg)[1:])
   endif
   let dict.sel = &selection
   let &selection = "inclusive"
@@ -44,10 +45,6 @@ function! s:_reg_restore(dict, ...) abort " {{{
   if get(a:000, 0, 0) == 0
     let &selection = a:dict.sel
   endif
-endfunction " }}}
-
-function! s:_block_width(reg) abort " {{{
-  return str2nr(getregtype(a:reg)[1:])
 endfunction " }}}
 
 " yank(motion) {{{
@@ -91,7 +88,7 @@ function! s:highlight(motion, hlgroup, ...) abort " {{{
   let priority = get(a:, '1', 10)
 
   try
-    let mids = fdic.highlight(a:hlgroup, priority, getpos("'["), getpos("']"), regdic.reg)
+    let mids = fdic.highlight(a:hlgroup, priority, getpos("'["), getpos("']"), regdic)
     return mids
   finally
     call s:_reg_restore(regdic)
@@ -114,8 +111,8 @@ function! s:_funcs.line.highlight(hlgroup, priority, begin, end, ...) abort " {{
   return [matchadd(a:hlgroup, printf('\%%>%dl\%%<%dl', a:begin[1]-1, a:end[1]+1), a:priority)]
 endfunction " }}}
 
-function! s:_funcs.block.highlight(hlgroup, priority, begin, end, reg) abort " {{{
-  let width = s:_block_width(a:reg)
+function! s:_funcs.block.highlight(hlgroup, priority, begin, end, regdic) abort " {{{
+  let width = a:regdic.width
   echomsg width
   return [matchadd(a:hlgroup,
         \ printf('\%%>%dl\%%<%dl\%%>%dc\%%<%dc',
@@ -135,14 +132,14 @@ function! s:replace(motion, str, ...) abort " {{{
   let regdic = s:_reg_save(a:motion)
 
   try
-    return fdic.replace(a:str, regdic.reg, get(a:000, 0, ''))
+    return fdic.replace(a:str, regdic, get(a:000, 0, ''))
   finally
     call s:_reg_restore(regdic)
   endtry
 endfunction " }}}
 
-function! s:_funcs.char.replace(str, reg, ...) abort " {{{
-  call setreg(a:reg, a:str, 'v')
+function! s:_funcs.char.replace(str, regdic, ...) abort " {{{
+  call setreg(a:regdic.reg, a:str, 'v')
   let end = getpos("']")
   let eline = getline(end[1])
   if len(eline) > end[2]
@@ -157,35 +154,36 @@ function! s:_funcs.char.replace(str, reg, ...) abort " {{{
     endif
   endif
 
-  call s:_knormal(printf('`[v`]"_d"%s%s', a:reg, p))
+  call s:_knormal(printf('`[v`]"_d"%s%s', a:regdic.reg, p))
 endfunction " }}}
 
-function! s:_funcs.line.replace(str, reg, ...) abort " {{{
-  call setreg(a:reg, a:str, 'V')
+function! s:_funcs.line.replace(str, regdic, ...) abort " {{{
+  call setreg(a:regdic.reg, a:str, 'V')
   let begin = getpos("'[")
   let end = getpos("']")
   if end[1] == line('$')
     if begin[1] == 1
       " ファイル全体を消してしまったので,
       " もう一度 yank しなおして, '[, '] を設定しなおす
-      let p = 'PG"_ddggVG"' . a:reg . 'y'
+      let p = 'PG"_ddggVG"' . a:regdic.reg . 'y'
     else
       let p = 'p'
     endif
   else
     let p = 'P'
   endif
-  call s:_knormal(printf('`[V`]"_d"%s%s', a:reg, p))
+  call s:_knormal(printf('`[V`]"_d"%s%s', a:regdic.reg, p))
 endfunction " }}}
 
 " c.f. operation-replace:
 " char 最初の行. あとは切り詰め
 " line 直前の行にペースト
 " block 頭から. あとは切り詰め. あふれたら後ろに
-function! s:_funcs.block.replace(str, reg, flags) abort " {{{
+function! s:_funcs.block.replace(str, regdic, flags) abort " {{{
   let spos = getpos("'[")
   let epos = getpos("']")
-  let width = s:_block_width(a:reg)
+  let width = a:regdic.bwidth
+  let reg = a:regdic.reg
   let strs = split(a:str, "\n")
   if epos[1] - spos[1] + 1 <= len(strs)
     if a:flags =~# 'd'
@@ -230,11 +228,11 @@ function! s:_funcs.block.replace(str, reg, flags) abort " {{{
 
   for i in range(b - t + 1)
     call setpos('.', [0, i + t, spos[2], 0])
-    call setreg(a:reg, strs[i], 'v')
+    call setreg(reg, strs[i], 'v')
     if len(getline('.')) < end
-      call s:_knormal(printf('v$h"_d"%sp', a:reg))
+      call s:_knormal(printf('v$h"_d"%sp', reg))
     else
-      call s:_knormal(printf('v%dl"_d"%sP', width - 1, a:reg))
+      call s:_knormal(printf('v%dl"_d"%sP', width - 1, reg))
     endif
   endfor
 endfunction " }}}
@@ -246,81 +244,85 @@ function! s:wrap(motion, left, right, ...) abort " {{{
   let regdic = s:_reg_save(a:motion)
 
   try
-    return fdic.wrap(a:left, a:right, regdic.reg, get(a:000, 0, ''))
+    return fdic.wrap(a:left, a:right, regdic, get(a:000, 0, ''))
   finally
     call s:_reg_restore(regdic)
   endtry
 endfunction " }}}
 
-function! s:_funcs.char.wrap(left, right, reg, ...) abort " {{{
+function! s:_funcs.char.wrap(left, right, regdic, ...) abort " {{{
+  let reg = a:regdic.reg
   call s:_knormal("`[v`]\<Esc>")
-  call setreg(a:reg, a:right, 'v')
-  call s:_knormal('`>"' . a:reg . 'p')
-  call setreg(a:reg, a:left, 'v')
-  call s:_knormal('`<"' . a:reg . 'P')
+  call setreg(reg, a:right, 'v')
+  call s:_knormal('`>"' . reg . 'p')
+  call setreg(reg, a:left, 'v')
+  call s:_knormal('`<"' . reg . 'P')
 endfunction " }}}
 
-function! s:_funcs.line.wrap(left, right, reg, flags) abort " {{{
+function! s:_funcs.line.wrap(left, right, regdic, flags) abort " {{{
   let v = (a:flags =~# 'n') ? 'V' : 'v'
+  let reg = a:regdic.reg
 
   call s:_knormal("`[V`]\<Esc>")
   if a:right !=# ''
-    call setreg(a:reg, a:right, v)
-    call s:_knormal('`>"' . a:reg . 'p')
+    call setreg(reg, a:right, v)
+    call s:_knormal('`>"' . reg . 'p')
   endif
   if a:left !=# ''
-    call setreg(a:reg, a:left, v)
-    call s:_knormal('`<"' . a:reg . 'P')
+    call setreg(reg, a:left, v)
+    call s:_knormal('`<"' . reg . 'P')
   endif
 " call s:_knormal(printf("%dGA%s\<Esc>%dGgI%s\<Esc>",
 "       \ getpos("']")[1], a:right, getpos("'[")[1], a:left))
 endfunction " }}}
 
-function! s:_funcs.block.wrap(left, right, reg, flags) abort " {{{
+function! s:_funcs.block.wrap(left, right, regdic, flags) abort " {{{
   if a:flags =~# 'v'
-    return s:block_wrap_vertical(a:left, a:right, a:reg)
+    return s:block_wrap_vertical(a:left, a:right, a:regdic)
   elseif a:flags =~# 'w'
     " whole 最初と最後.
-    return s:_funcs.char.wrap(a:left, a:right, a:reg)
+    return s:_funcs.char.wrap(a:left, a:right, a:regdic)
   else
     " 各行
-    return s:block_wrap_eachline(a:left, a:right, a:reg)
+    return s:block_wrap_eachline(a:left, a:right, a:regdic)
   endif
 endfunction " }}}
 
-function! s:block_wrap_eachline(left, right, reg) abort " {{{
+function! s:block_wrap_eachline(left, right, regdic) abort " {{{
   " 各行について char する.
   " left, right が改行文字をもつと壊れる
   let spos = getpos("'[")
   let epos = getpos("']")
-  let end = str2nr(getregtype(a:reg)[1:]) + spos[2] - 1
-  call setreg(a:reg, a:right, 'v')
+  let end = a:regdic.bwidth + spos[2] - 1
+  let reg = a:regdic.reg
+  call setreg(reg, a:right, 'v')
   for line in range(spos[1], epos[1])
     call setpos('.', [0, line, end, 0])
     if len(getline('.')) >= spos[2]
-      call s:_knormal('"' . a:reg . 'p')
+      call s:_knormal('"' . reg . 'p')
     endif
   endfor
-  call setreg(a:reg, a:left, 'v')
+  call setreg(reg, a:left, 'v')
   for line in range(spos[1], epos[1])
     call setpos('.', [0, line, spos[2], 0])
     if len(getline('.')) >= spos[2]
-      call s:_knormal('"' . a:reg . 'P')
+      call s:_knormal('"' . reg . 'P')
     endif
   endfor
 endfunction " }}}
 
-function! s:block_wrap_vertical(left, right, reg) abort " {{{
+function! s:block_wrap_vertical(left, right, regdic) abort " {{{
   let spos = getpos("'[")
   let blank = repeat(' ', spos[1]-1)
+  let reg = a:regdic.reg
 
   if a:right !=# ''
-    call setreg(a:reg, blank . a:right, 'V')
-    call s:_knormal('`>"' . a:reg . 'p')
+    call setreg(reg, blank . a:right, 'V')
+    call s:_knormal('`>"' . reg . 'p')
   endif
   if a:left !=# ''
-    call setreg(a:reg, blank . a:left, 'V')
-    call s:_knormal('`<"' . a:reg . 'P')
+    call setreg(reg, blank . a:left, 'V')
+    call s:_knormal('`<"' . reg . 'P')
   endif
 endfunction " }}}
 " }}}
@@ -378,7 +380,7 @@ endfunction " }}}
 function! s:_funcs.block.eachline(func, reg, regdic, spos, epos, ...) abort " {{{
   let mark = '`'
   let pos = copy(a:epos)
-  let width = s:_block_width(a:reg) - 1
+  let width = a:regdic.bwidth - 1
   let pos[2] = a:spos[2]
   for i in range(a:epos[1], a:spos[1], -1)
     let pos[1] = i
