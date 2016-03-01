@@ -24,26 +24,25 @@ function! s:_knormal(s) abort " {{{
 endfunction " }}}
 
 function! s:_reg_save(motion) abort " {{{
-  let reg = '"'
-  let regdic = {}
-  for r in [reg]
-    let regdic[r] = [getreg(r), getregtype(r)]
+  let dict = {'reg': '"', 'regdic': {}}
+  for r in [dict.reg]
+    let dict.regdic[r] = [getreg(r), getregtype(r)]
   endfor
-    if a:motion ==# 'block'
-    call s:_knormal(printf('gv"%sy', reg))
+  if a:motion ==# 'block'
+    call s:_knormal(printf('gv"%sy', dict.reg))
   endif
-  let sel_save = &selection
+  let dict.sel = &selection
   let &selection = "inclusive"
 
-  return [reg, regdic, sel_save]
+  return dict
 endfunction " }}}
 
-function! s:_reg_restore(regdic, ...) abort " {{{
-  for [reg, val] in items(a:regdic[0])
+function! s:_reg_restore(dict, ...) abort " {{{
+  for [reg, val] in items(a:dict.regdic)
     call setreg(reg, val[0], val[1])
   endfor
   if get(a:000, 0, 0) == 0
-    let &selection = a:regdic[1]
+    let &selection = a:dict.sel
   endif
 endfunction " }}}
 
@@ -61,10 +60,10 @@ endfunction " }}}
 
 " gettext() {{{
 function! s:gettext(motion) abort " {{{
-  let [reg; regdic] = s:_reg_save(a:motion)
+  let regdic = s:_reg_save(a:motion)
   try
     let fdic = s:_funcs[a:motion]
-    return fdic.gettext(reg)
+    return fdic.gettext(regdic.reg)
   finally
     call s:_reg_restore(regdic)
   endtry
@@ -88,11 +87,11 @@ endfunction " }}}
 " highlight(motion, hlgroup, priority...) {{{
 function! s:highlight(motion, hlgroup, ...) abort " {{{
   let fdic = s:_funcs[a:motion]
-  let [reg; regdic] = s:_reg_save(a:motion)
+  let regdic = s:_reg_save(a:motion)
   let priority = get(a:, '1', 10)
 
   try
-    let mids = fdic.highlight(a:hlgroup, priority, getpos("'["), getpos("']"), reg)
+    let mids = fdic.highlight(a:hlgroup, priority, getpos("'["), getpos("']"), regdic.reg)
     return mids
   finally
     call s:_reg_restore(regdic)
@@ -133,10 +132,10 @@ endfunction " }}}
 " replace(motion, str, flags) {{{
 function! s:replace(motion, str, ...) abort " {{{
   let fdic = s:_funcs[a:motion]
-  let [reg; regdic] = s:_reg_save(a:motion)
+  let regdic = s:_reg_save(a:motion)
 
   try
-    return fdic.replace(a:str, reg, get(a:000, 0, ''))
+    return fdic.replace(a:str, regdic.reg, get(a:000, 0, ''))
   finally
     call s:_reg_restore(regdic)
   endtry
@@ -244,10 +243,10 @@ endfunction " }}}
 " wrap {{{
 function! s:wrap(motion, left, right, ...) abort " {{{
   let fdic = s:_funcs[a:motion]
-  let [reg; regdic] = s:_reg_save(a:motion)
+  let regdic = s:_reg_save(a:motion)
 
   try
-    return fdic.wrap(a:left, a:right, reg, get(a:000, 0, ''))
+    return fdic.wrap(a:left, a:right, regdic.reg, get(a:000, 0, ''))
   finally
     call s:_reg_restore(regdic)
   endtry
@@ -401,7 +400,7 @@ function! s:_funcs.block.eachline(func, reg, regdic, spos, epos, ...) abort " {{
     call setpos('.', a:spos)
     call s:_knormal(printf("\<C-v>%dj$\"%sy", a:epos[1] - a:spos[1], a:reg))
   else
-    if a:regdic[1] == 'exclusive'
+    if a:regdic.sel == 'exclusive'
       set selection=exclusive
       let a:epos[2] += 1
     endif
@@ -421,9 +420,9 @@ function! s:eachline(motion, func, flags) abort " {{{
     return a:func(a:motion)
   endif
 
-  let [reg; regdic] = s:_reg_save(a:motion)
+  let regdic = s:_reg_save(a:motion)
   try
-    return s:_funcs[a:motion].eachline(a:func, reg, regdic, spos, epos, a:flags)
+    return s:_funcs[a:motion].eachline(a:func, regdic.reg, regdic, spos, epos, a:flags)
   finally
     call s:_reg_restore(regdic)
   endtry
