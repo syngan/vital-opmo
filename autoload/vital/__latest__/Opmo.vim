@@ -295,17 +295,14 @@ function! s:block_wrap_eachline(left, right, regdic) abort " {{{
   let epos = getpos("']")
   let end = a:regdic.bwidth + spos[2] - 1
   let reg = a:regdic.reg
-  call setreg(reg, a:right, 'v')
-  for line in range(spos[1], epos[1])
-    call setpos('.', [0, line, end, 0])
-    if len(getline('.')) >= spos[2]
+  for line in range(epos[1], spos[1], -1)
+    if len(getline(line)) >= spos[2]
+      call setpos('.', [0, line, end, 0])
+      call setreg(reg, a:right, 'v')
       call s:_knormal('"' . reg . 'p')
-    endif
-  endfor
-  call setreg(reg, a:left, 'v')
-  for line in range(spos[1], epos[1])
-    call setpos('.', [0, line, spos[2], 0])
-    if len(getline('.')) >= spos[2]
+
+      call setreg(reg, a:left, 'v')
+      call setpos('.', [0, line, spos[2], 0])
       call s:_knormal('"' . reg . 'P')
     endif
   endfor
