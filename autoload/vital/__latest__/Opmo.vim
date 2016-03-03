@@ -18,7 +18,6 @@ set cpo&vim
 
 let s:_funcs = {'char' : {'v':'v'}, 'line': {'v':'V'}, 'block': {'v':"\<C-v>"}}
 
-
 function! s:_knormal(s) abort " {{{
   execute 'keepjumps' 'silent' 'normal!' a:s
 endfunction " }}}
@@ -112,8 +111,7 @@ function! s:_funcs.line.highlight(hlgroup, priority, begin, end, ...) abort " {{
 endfunction " }}}
 
 function! s:_funcs.block.highlight(hlgroup, priority, begin, end, regdic) abort " {{{
-  let width = a:regdic.width
-  echomsg width
+  let width = a:regdic.bwidth
   return [matchadd(a:hlgroup,
         \ printf('\%%>%dl\%%<%dl\%%>%dc\%%<%dc',
         \ a:begin[1]-1, a:end[1]+1, a:begin[2]-1, a:begin[2]+width), a:priority)]
